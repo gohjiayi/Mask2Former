@@ -1,4 +1,4 @@
-_BASE_: "../../coco/instance-segmentation/swin/maskformer2_swin_tiny_bs16_50ep.yaml"
+_BASE_: "../../../coco/instance-segmentation/swin/maskformer2_swin_tiny_bs16_50ep.yaml"
 
 DATASETS:
   TRAIN: ("safetybarrier_train",)
