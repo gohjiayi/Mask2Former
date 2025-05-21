@@ -1,0 +1,27 @@
+_BASE_: "../../coco/instance-segmentation/swin/maskformer2_swin_large_IN21k_384_bs16_100ep.yaml"
+
+DATASETS:
+  TRAIN: ("safetybarrier_train",)
+  TEST:  ("safetybarrier_val",)
+
+MODEL:
+  SEM_SEG_HEAD:
+    NUM_CLASSES: 4
+  ROI_HEADS:
+    NUM_CLASSES: 4
+
+SOLVER:
+  IMS_PER_BATCH: 12
+  BASE_LR: 0.0001
+  # For 80 images, each epoch = 80/20 = 4 iterations
+  # Training for 50 epochs = 4 * 50 = 200 iterations
+  MAX_ITER: 200  # 50 epochs
+  # Reduce learning rate at 80% and 90% of training
+  STEPS: (160, 180)  # 40 and 45 epochs
+
+INPUT:
+  DATASET_MAPPER_NAME: "safetybarrier_instance_lsj"
+  MASK_FORMAT: "bitmask"
+  FORMAT: "RGB"
+  CROP:
+    ENABLED: False

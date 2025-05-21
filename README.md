@@ -76,3 +76,101 @@ If you find the code useful, please also consider the following BibTeX entry.
 ## Acknowledgement
 
 Code is largely based on MaskFormer (https://github.com/facebookresearch/MaskFormer).
+
+# Customisation
+This customisation portion is to finetune the model on a custom dataset to detect safety barrier components, consisting of 4 classes: `rail_top`, `rail_mid`, `toeboard`, `vertical_post`. Based on the pre-trained models, the *COCO instance segmentation model with a Swin-Large backbone* is preferred. Experimentations with the Swin-Tiny backbone is also conducted, and you will be able to see commands for both below.
+
+## Custom Demo
+To run the demo with the pre-trained models, download the relevant model weights from the model zoo, reference the correct weights and config file, indicate the input image and output image paths and run the following command.
+If you'd prefer viewing the output in a new window showing using OpenCV, remove the `--output` flag, but take note if you are running this in a headless server environment, SSH path forwarding may be required.
+
+```bash
+cd demo/
+
+# COCO Instance Segmentation Swin-Tiny backbone
+python demo.py --config-file ../configs/coco/instance-segmentation/swin/maskformer2_swin_tiny_bs16_50ep.yaml \
+  --input ../assets/sample_image.jpg \
+  --output ../assets/sample_output_tiny.jpg \
+  --opts MODEL.WEIGHTS ../model_final_1e7f22.pkl
+
+# COCO Instance Segmentation Swin-Large backbone
+python demo.py --config-file ../configs/coco/instance-segmentation/swin/maskformer2_swin_large_IN21k_384_bs16_100ep.yaml \
+  --input ../assets/sample_image.jpg \
+  --output ../assets/sample_output_large.jpg \
+  --opts MODEL.WEIGHTS ../model_final_e5f453.pkl
+
+cd ..
+```
+
+## Custom Finetuning
+
+### Preparation
+The dataset is expected to be in the following format based on dataset registration in `mask2former/data/datasets/register_safetybarrier_instance.py`.
+
+```
+datasets/
+  safetybarrier/
+    images/
+      train/
+        img_00001.jpg
+        img_00002.jpg
+        ...
+      val/
+        img_00001.jpg
+        img_00002.jpg
+        ...
+    annotations/
+      instances_train.json
+      instances_val.json
+```
+
+`mask2former/data/dataset_mappers/safetybarrier_instance_dataset_mapper.py` is used to map the custom dataset to the Mask2Former format.
+
+The configs for finetuning the models are in the paths below, with one for Swin-Tiny and one for Swin-Large as indicated in the file names.
+
+```
+configs/safetybarrier/instance-segmentation/swin/maskformer2_swin_tiny_bs16_50ep.yaml
+configs/safetybarrier/instance-segmentation/swin/maskformer2_swin_large_IN21k_384_bs16_100ep.yaml
+```
+
+### Training
+Perform the commands in the root folder.
+
+```bash
+# Set your GPUs
+export CUDA_VISIBLE_DEVICES=2,3
+
+# Finetune Swin-Tiny
+python train_net.py \
+  --config-file configs/safetybarrier/instance-segmentation/swin/maskformer2_swin_tiny_bs16_50ep.yaml \
+  --num-gpus 2 \
+  MODEL.WEIGHTS model_final_1e7f22.pkl \
+  OUTPUT_DIR output_tiny
+
+# Finetune Swin-Large
+python train_net.py \
+  --config-file configs/safetybarrier/instance-segmentation/swin/maskformer2_swin_large_IN21k_384_bs16_100ep.yaml \
+  --num-gpus 2 \
+  MODEL.WEIGHTS model_final_e5f453.pkl \
+  OUTPUT_DIR output_large
+```
+
+### Demo
+
+```bash
+# Run the demo with the finetuned model
+cd demo/
+
+# Finetuned Swin-Tiny
+python demo.py --config-file ../configs/safetybarrier/instance-segmentation/swin/maskformer2_swin_tiny_bs16_50ep.yaml \
+  --input ../assets/sample_image.jpg \
+  --output ../assets/sample_output_finetuned_tiny.jpg \
+  --confidence-threshold 0.8 \
+  --opts MODEL.WEIGHTS ../output_tiny/model_final.pth
+
+# Finetuned Swin-Large
+python demo_edit.py --config-file ../configs/safetybarrier/instance-segmentation/swin/maskformer2_swin_large_IN21k_384_bs16_100ep \
+  --input ../assets/sample_image.jpg \
+  --output ../assets/sample_output_finetuned_large.jpg \
+  --confidence-threshold 0.8 \
+  --opts MODEL.WEIGHTS ../output_large/model_final.pth

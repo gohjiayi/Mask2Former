@@ -1,3 +1,6 @@
+import mask2former.data.datasets.register_safetybarrier_instance
+from mask2former.data.dataset_mappers.safetybarrier_instance_dataset_mapper import SafetyBarrierInstanceDatasetMapper
+
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved
 """
 MaskFormer Training Script.
@@ -167,6 +170,9 @@ class Trainer(DefaultTrainer):
         # coco panoptic segmentation lsj new baseline
         elif cfg.INPUT.DATASET_MAPPER_NAME == "coco_panoptic_lsj":
             mapper = COCOPanopticNewBaselineDatasetMapper(cfg, True)
+            return build_detection_train_loader(cfg, mapper=mapper)
+        elif cfg.INPUT.DATASET_MAPPER_NAME == "safetybarrier_instance_lsj":
+            mapper = SafetyBarrierInstanceDatasetMapper(cfg, True)
             return build_detection_train_loader(cfg, mapper=mapper)
         else:
             mapper = None

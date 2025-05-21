@@ -51,3 +51,9 @@ _darcs
 /projects/*/datasets
 /models
 /snippet
+
+/venv
+/archive
+/assets
+/output*
+/datasets/safetybarrier
