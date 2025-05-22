@@ -169,8 +169,69 @@ python demo.py --config-file ../configs/safetybarrier/instance-segmentation/swin
   --opts MODEL.WEIGHTS ../output_tiny/model_final.pth
 
 # Finetuned Swin-Large
-python demo_edit.py --config-file ../configs/safetybarrier/instance-segmentation/swin/maskformer2_swin_large_IN21k_384_bs16_100ep \
+python demo.py --config-file ../configs/safetybarrier/instance-segmentation/swin/maskformer2_swin_large_IN21k_384_bs16_100ep.yaml \
   --input ../assets/sample_image.jpg \
   --output ../assets/sample_output_finetuned_large.jpg \
   --confidence-threshold 0.8 \
   --opts MODEL.WEIGHTS ../output_large/model_final.pth
+```
+
+## Model-Assisted Labelling Prediction
+A custom model was used to generate initial predictions for semi-automated labeling of the safety barrier dataset, based on a small manually labeled subset. These preliminary annotations were uploaded to the labeling platform (CVAT) to kickstart the labeling process. The predictions were then refined by human annotators, accelerating the overall annotation workflow and producing high-quality labels for subsequent model fine-tuning.
+
+Make sure input_dir contains:
+```
+input_dir/
+├── images/                  # Images to predict
+│   ├── image1.jpg
+│   └── ...
+└── annotations.xml          # Original annotations with metadata from CVAT
+```
+
+The output_dir will contain:
+```
+output_dir/
+├── annotations.xml          # Final updated annotations
+├── visuals/                 # Visualized predictions per image
+│   ├── image1.jpg
+│   └── ...
+├── predictions/             # Checkpoint individual JSONs for each image (RLE, classes, etc.)
+│   ├── image1.json
+│   └── ...
+```
+
+This should only be executed on the Finetuned Swin-Large model, since it will have a better result in comparison to the Swin-Tiny backbone.
+
+```bash
+# Set your GPU, one is enough
+export CUDA_VISIBLE_DEVICES=3
+
+cd predict/
+
+# Finetuned Swin-Large on Test Datasplit
+python run_annotation_pipeline.py \
+  --input_dir input/test \
+  --output_dir output/test \
+  --config-file ../configs/safetybarrier/instance-segmentation/swin/maskformer2_swin_large_IN21k_384_bs16_100ep.yaml \
+  --confidence-threshold 0.5 \
+  --batch-size 8 \
+  --opts MODEL.WEIGHTS ../output_large/model_final.pth
+
+# Finetuned Swin-Large on Train Datasplit
+python run_annotation_pipeline.py \
+  --input_dir input/train \
+  --output_dir output/train \
+  --config-file ../configs/safetybarrier/instance-segmentation/swin/maskformer2_swin_large_IN21k_384_bs16_100ep.yaml \
+  --confidence-threshold 0.5 \
+  --batch-size 8 \
+  --opts MODEL.WEIGHTS ../output_large/model_final.pth
+
+# Finetuned Swin-Large on Val Datasplit
+python run_annotation_pipeline.py \
+  --input_dir input/val \
+  --output_dir output/val \
+  --config-file ../configs/safetybarrier/instance-segmentation/swin/maskformer2_swin_large_IN21k_384_bs16_100ep.yaml \
+  --confidence-threshold 0.5 \
+  --batch-size 8 \
+  --opts MODEL.WEIGHTS ../output_large/model_final.pth
+```
